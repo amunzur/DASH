@@ -1,5 +1,5 @@
 DASH (Deletion of Allele-specific HLAs
-This repo contains some modifications I made to the source code of the DASH project. The changes are as follows: 
+This repo contains some modifications I made to the source code of the DASH project so that it is easier to run. The changes are as follows: 
 1. Originally the plotting function (`plot_results`) wasn't called. My changes run the plotting function for 
 each gene (A, B and C) and for each allele in each gene. The resulting pdf is outputted to the output directory provided by the user.
 Both the `positions` and `all_positions` files need to exist for plotting to work. If one or both are missing, the plotting function won't run.
