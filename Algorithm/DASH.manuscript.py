@@ -127,22 +127,22 @@ def run_alignment_on_all_alleles(alleles, normal_dev, tumor_dev, normal_fastq, t
     for allele in alleles:
         if allele != '-':
             # Make index for each patient-specific reference allele
-            subprocess.call(["{0}/bwa".format(os.environ['BWA']), "index", "-p", '{0}/{1}'.format(normal_dev, allele),
+            subprocess.call(["bwa" ,"index", "-p", '{0}/{1}'.format(normal_dev, allele),
                              '{0}/{1}.fa'.format(normal_dev, allele)])
 
             # Alignment of each allele with normal reads
-            p1 = subprocess.Popen(["{0}/bwa".format(os.environ['BWA']), 'mem', '{0}/{1}'.format(normal_dev, allele),
+            p1 = subprocess.Popen(["bwa", "mem", '{0}/{1}'.format(normal_dev, allele),
                                    normal_fastq], stdout=subprocess.PIPE)
-            p2 = subprocess.Popen(['{0}/samtools'.format(os.environ['SAMTOOLS']), 'sort', '-o',
+            p2 = subprocess.Popen(["samtools", "sort", "-o",
                                    '{0}/{1}.bam'.format(normal_dev, allele)], stdin=p1.stdout, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
             p1.stdout.close()
             p2.communicate()
 
             # Alignment of each allele with tumor reads
-            p1 = subprocess.Popen(["{0}/bwa".format(os.environ['BWA']), 'mem', '{0}/{1}'.format(normal_dev, allele),
+            p1 = subprocess.Popen(["bwa", "mem", '{0}/{1}'.format(normal_dev, allele),
                                    tumor_fastq], stdout=subprocess.PIPE)
-            p2 = subprocess.Popen(['{0}/samtools'.format(os.environ['SAMTOOLS']), 'sort', '-o',
+            p2 = subprocess.Popen(["samtools", "sort", "-o",
                                    '{0}/{1}.bam'.format(tumor_dev, allele)], stdin=p1.stdout, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
             p1.stdout.close()
@@ -163,7 +163,7 @@ def clean_up_reads(normal_dev, tumor_dev, alleles, mutated_alleles):
         for allele in alleles:
             if allele != '-':
                 # Create index
-                subprocess.call(['{0}/samtools'.format(os.environ['SAMTOOLS']), 'index',
+                subprocess.call(['samtools', 'index',
                                  '{0}/{1}.bam'.format(mode, allele)])
 
                 # Sort reads
@@ -183,7 +183,7 @@ def clean_up_reads(normal_dev, tumor_dev, alleles, mutated_alleles):
                 read_name_dict[mode_name][allele] = read_names
 
                 # Create index
-                subprocess.call(['{0}/samtools'.format(os.environ['SAMTOOLS']), 'index',
+                subprocess.call(['samtools', 'index',
                                  '{0}/{1}.stringent.bam'.format(mode, allele)])
 
     return read_name_dict
@@ -201,7 +201,7 @@ def calculate_coverage(normal_dev, tumor_dev, allele_dict):
                 if allele != '-':
 
                     all_lines = []
-                    subprocess.call(['{0}/samtools'.format(os.environ['SAMTOOLS']), 'depth', '-aa',
+                    subprocess.call(['samtools', 'depth', '-aa',
                                      '{0}/{1}.stringent.bam'.format(mode, allele)],
                                     stdout=open('{0}/{1}.stringent.depth'.format(mode, allele), 'w'))
                     for x in open('{0}/{1}.stringent.depth'.format(mode, allele)).readlines():
@@ -469,7 +469,7 @@ if __name__ == "__main__":
 
         # Check for homozygous alleles
         if allele1 == allele2:  # Homozygous genes
-            dash_output_dict = address_homozygosity(dash_output_dict, float(options.purity), int(options.ploidy))
+            dash_output_dict = address_homozygosity(dash_output_dict, float(options.purity), int(float(options.ploidy)))
             continue
 
         # Alignment
@@ -493,13 +493,13 @@ if __name__ == "__main__":
         print('Number of mismatches: {0}'.format(len(mismatches_df)))
         if len(mismatches_df) < 5:
             print('WARNING: Dangerously low number of mismatches with coverage')
-            dash_output_dict = address_homozygosity(dash_output_dict, float(options.purity), int(options.ploidy))
+            dash_output_dict = address_homozygosity(dash_output_dict, float(options.purity), int(float(options.ploidy)))
             continue
 
         # Adding non-alignment dependent features
         dash_output_dict['Flanking_region_LOH'].extend([flanking_calls[gene_index], flanking_calls[gene_index]])
         dash_output_dict['Purities'].extend([float(options.purity), float(options.purity)])
-        dash_output_dict['Ploidies'].extend([int(options.ploidy), int(options.ploidy)])
+        dash_output_dict['Ploidies'].extend([int(float(options.ploidy)), int(float(options.ploidy))])
         dash_output_dict['Alleles'].extend([allele1, allele2])
 
         # Calculate the b-allele frequency for each mismatch
@@ -543,10 +543,15 @@ if __name__ == "__main__":
         dash_output_dict['Total_Coverage'].extend([total_coverage, total_coverage])
 
         # Machine learning prediction
-        prediction_df = pd.DataFrame({'purity': [float(options.purity)], 'ploidy': [int(options.ploidy)],
+        prediction_df = pd.DataFrame({'purity': [float(options.purity)], 'ploidy': [int(float(options.ploidy))],
                                       'Sequenza_Loss': [flanking_calls[gene_index]],
                                       'minMedCoverage': [min_allele_specific_coverage], 'baf_median': [adj_baf],
                                       'percCov': [percCov], 'totalCoverage_median': [total_coverage]})
+        # prediction_df = pd.DataFrame({'Sequenza_Loss': [flanking_calls[gene_index]], 'baf_median': [adj_baf], 
+        #                               'minMedCoverage': [min_allele_specific_coverage], 'percCov': [percCov], 
+        #                               'ploidy': [int(float(options.ploidy))], 'purity': [float(options.purity)], 
+        #                               'totalCoverage_median': [total_coverage]})
+
         prediction_df.to_csv('{0}/DASH.features_{1}.csv'.format(output_dir, gene), index=False)
         prediction_probability = model.predict_proba(prediction_df)[0][1]
 
