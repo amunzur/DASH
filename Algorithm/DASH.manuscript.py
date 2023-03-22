@@ -35,9 +35,10 @@ R_cutoff = 0.98
 
 
 # Get and process the HLA types
-def get_HLA_types(raw_hla, hla_database):
+def get_HLA_types(raw_hla_path, hla_database):
     # Open file with HLA types
-    raw_hla_types = list(raw_hla.split(','))
+    with open(raw_hla_path) as file:
+        hla_types = [line.rstrip() for line in file]
 
     # Get polysolver alleles
     all_alleles = []
@@ -46,27 +47,19 @@ def get_HLA_types(raw_hla, hla_database):
             all_alleles.append(record.description)
 
     # Check for existence of HLA types
-    hla_types_formatted = []
-    for hla in raw_hla_types:
-        try:
-            hla_formatted = 'hla_{0}_{1}'.format(hla[0].lower(), '_'.join(hla.split('*')[1].split(':')).lower())
-            print(hla_formatted)
-            hla_types_formatted.append(hla_formatted)
-        except:
-            print("[Error] HLA type is not in the correct format: {0}".format(hla))
-            sys.exit()
-        if hla_formatted not in all_alleles:
-            hla_formatted = get_adjacent_alleles_in_polysolver_dataset(hla_formatted, all_alleles)
-            if hla_formatted not in all_alleles:
+    for hla in hla_types:
+        if hla not in all_alleles:
+            hla = get_adjacent_alleles_in_polysolver_dataset(hla, all_alleles)
+            if hla not in all_alleles:
                 print("[Error] HLA type is not in database. Check format or allele: {0}".format(hla_formatted))
                 sys.exit()
 
     # Make into dictionaries
-    allele_dict = {'A': hla_types_formatted[:2],
-                      'B': hla_types_formatted[2:4],
-                      'C': hla_types_formatted[4:]}
+    allele_dict = {'A': hla_types[:2],
+                      'B': hla_types[2:4],
+                      'C': hla_types[4:]}
 
-    return hla_types_formatted, allele_dict
+    return hla_types, allele_dict
 
 
 # Convert alleles that don't exist in polysolver
