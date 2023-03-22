@@ -16,14 +16,13 @@ We first need to convert it to float, and then to an integer.
 
 ### How to run DASH: 
 The new parameters needed are:  
-`--dir_sequenza:` The output directory from Sequenza. This directory contains the file that ends with `alternative_solutions.txt`.
+`--dir_sequenza:` The output directory from Sequenza. This directory contains the file that ends with `alternative_solutions.txt` and `segments.txt`.
 `--path_polysolver_winners:` The path to the `winners_hla.txt` file from HLA-Polysolver  
 `--normal_fastq:` Fastq with reads from normal sample  
 `--tumor_fastq:` Fastq with reads from tumor sample  
 `--hla_somatic_mutations:` HLA somatic mutations (polysolver file)  
 `--normal_read_count:` Number of reads from normal sample  
 `--tumor_read_count:` Number of reads from tumor sample  
-`--sequenza_cnv:` The path to the `segments.txt` file from Sequenza  
 `--all_allele_reference:` Reference database of genomic sequences for all alleles  
 `--model_filename:` Model file name (This file needs to be requested from authors. Please send an email to bioinformatics.science@personalis.com.)  
 `--output_dir:` Output directory  
@@ -38,7 +37,6 @@ python DASH.manuscript.py \
 	--hla_somatic_mutations ./test_data/hla_mutations.merged.vcf \
 	--normal_read_count 166545259.1184 \
 	--tumor_read_count 333050764.298 \
-	--sequenza_cnv /some/path/sample_segments.txt \
 	--all_allele_reference ./test_data/hla_gen.fasta.IMGTv312.txt \
 	--model_filename some/path/model.p \
 	--output_dir ./test_output
