@@ -16,8 +16,7 @@ We first need to convert it to float, and then to an integer.
 
 ### How to run DASH: 
 The new parameters needed are:  
-`--purity:` Tumor purity  
-`--ploidy:` Tumor ploidy  
+`--dir_sequenza:` The output directory from Sequenza. This directory contains the file that ends with `alternative_solutions.txt`.
 `--path_polysolver_winners:` The path to the `winners_hla.txt` file from HLA-Polysolver  
 `--normal_fastq:` Fastq with reads from normal sample  
 `--tumor_fastq:` Fastq with reads from tumor sample  
@@ -31,8 +30,8 @@ The new parameters needed are:
 
 ### Here is an example: 
 ```
-python DASH.manuscript.py --purity 0.34 \
-	--ploidy 3.7 \
+python DASH.manuscript.py \
+	--dir_sequenza /some/path/sample_alternative_solutions.txt \
 	--hla_types /some/path.hla_winners.txt \
 	--normal_fastq ./test_data/HLA_reads.normal.fasta \
 	--tumor_fastq ./test_data/HLA_reads.tumor.fasta \
