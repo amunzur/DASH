@@ -386,9 +386,17 @@ def plot_results(df, all_positions_df, gene, sample_name, allele1, allele2):
     plt.savefig('{0}/coverage_{1}.pdf'.format(output_dir, gene))
 
 # The following is for checking if there is an LOH event in the regions flanking the HLA alleles using the segments.txt file from Sequenza.
-def get_sequenza_flanking(sequenza_cnv):
+def get_sequenza_flanking(dir_sequenza):
+    # find the relevant segments.txt in the Sequenza output dirs with the copy number events
+    if not any(file.endswith("segments.txt") for file in os.listdir(dir_sequenza)):
+        print("Are you sure you ran Sequenza? alternative_solutions.txt file can't be found.")
+    else: 
+        for file in os.listdir(dir_sequenza):
+            if file.endswith('segments.txt'):
+                sequenza_cnv_path = os.path.join(dir_sequenza, file)
+    # initialize
     sequenza_majors, sequenza_minors = [], []
-    sequenza = get_sequenza_all(sequenza_cnv)
+    sequenza = get_sequenza_all(sequenza_cnv_path)
     for gene in ['A_loss', 'B_loss', 'C_loss']:
         if len(sequenza[sequenza[gene]]) > 0:
             sequenza_majors.extend([list(sequenza[sequenza[gene]].A)[0], list(sequenza[sequenza[gene]].A)[0]])
@@ -455,7 +463,7 @@ def loh_around_hla_c(x):
 # Using the alternative_solutions.txt file get the sample ploidy. The first reported solution is used.
 def get_ploidy(dir_sequenza): 
     # if there are no files that end with "alternative_solutions.txt":
-    if not any(file.endswith(".txt") for file in os.listdir(dir_sequenza)):
+    if not any(file.endswith("alternative_solutions.txt") for file in os.listdir(dir_sequenza)):
         print("Are you sure you ran Sequenza? alternative_solutions.txt file can't be found.")
     else: 
         for file in os.listdir(dir_sequenza):
@@ -480,8 +488,6 @@ if __name__ == "__main__":
                       help="Number of mapped reads in normal sequencing run.")
     args.add_argument("--tumor_read_count", action="store", required=True,
                       help="Number of mapped reads in tumor sequencing run.")
-    args.add_argument("--sequenza_cnv", action="store", required=True,
-                      help="The path to the segments.txt file from Sequenza.")
     args.add_argument("--all_allele_reference", action="store", required=True, help="IMGT allele reference file.")
     args.add_argument("--model_filename", action="store", required=True, help="XGBoost model (pickle).")
     args.add_argument("--output_dir", action="store", required=True, help='directory for output information')
@@ -517,7 +523,7 @@ if __name__ == "__main__":
     [ploidy, purity] = get_ploidy(options.dir_sequenza)
 
     # Get flanking regions and convert to integers
-    flanking_calls = get_sequenza_flanking(options.sequenza_cnv)
+    flanking_calls = get_sequenza_flanking(options.sequenza_dir)
     flanking_calls = [int(x) for x in flanking_calls.split(',')]
     print("Flanking calls computed.")
 
