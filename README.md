@@ -13,3 +13,34 @@ trained model. Correct order is ensured with the use of `reindex` from `pandas`.
 We first need to convert it to float, and then to an integer.
 6. Instead of supplying the `b_allele_flanking_loh`, now the user just needs to give the path to the `segments.txt` file from Sequenza. The whether there is a LOH event or not is computed in the script. 1 means there is a deletion, 0 means not.
 7. It is no longer needed to give the Polysolver output in a string format separated by `*` and `:`. Instead of `hla_types`, the user can give the path to the `winners_hla.txt` file from HLA-Polysolver. The alleles are formatted in the script.
+
+### How to run DASH: 
+The new parameters needed are: 
+`--purity:` Tumor purity
+`--ploidy:` Tumor ploidy
+`--path_polysolver_winners:` The path to the `winners_hla.txt` file from HLA-Polysolver
+`--normal_fastq:` Fastq with reads from normal sample
+`--tumor_fastq:` Fastq with reads from tumor sample
+`--hla_somatic_mutations:` HLA somatic mutations (polysolver file)
+`--normal_read_count:` Number of reads from normal sample
+`--tumor_read_count:` Number of reads from tumor sample
+`--sequenza_cnv:` The path to the `segments.txt` file from Sequenza
+`--all_allele_reference:` Reference database of genomic sequences for all alleles
+`--model_filename:` Model file name (This file needs to be requested from authors. Please send an email to bioinformatics.science@personalis.com.)
+`--output_dir:` Output directory
+
+### Here is an example: 
+```
+python DASH.manuscript.py --purity 0.34 \
+						  --ploidy 3.7 \
+						  --hla_types /some/path.hla_winners.txt \
+						  --normal_fastq ./test_data/HLA_reads.normal.fasta \
+						  --tumor_fastq ./test_data/HLA_reads.tumor.fasta \
+						  --hla_somatic_mutations ./test_data/hla_mutations.merged.vcf \
+						  --normal_read_count 166545259.1184 \
+						  --tumor_read_count 333050764.298 \
+						  --sequenza_cnv /some/path/sample_segments.txt \
+						  --all_allele_reference ./test_data/hla_gen.fasta.IMGTv312.txt \
+						  --model_filename some/path/model.p \
+						  --output_dir ./test_output
+```
