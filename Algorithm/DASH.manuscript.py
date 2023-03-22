@@ -547,6 +547,9 @@ if __name__ == "__main__":
                                       'Sequenza_Loss': [flanking_calls[gene_index]],
                                       'minMedCoverage': [min_allele_specific_coverage], 'baf_median': [adj_baf],
                                       'percCov': [percCov], 'totalCoverage_median': [total_coverage]})
+
+        prediction_df = prediction_df.reindex(columns=['purity', 'ploidy', 'Sequenza_Loss', 'minMedCoverage', 'baf_median', 'percCov', 'totalCoverage_median'])
+
         # prediction_df = pd.DataFrame({'Sequenza_Loss': [flanking_calls[gene_index]], 'baf_median': [adj_baf], 
         #                               'minMedCoverage': [min_allele_specific_coverage], 'percCov': [percCov], 
         #                               'ploidy': [int(float(options.ploidy))], 'purity': [float(options.purity)], 
@@ -585,5 +588,17 @@ if __name__ == "__main__":
     output = output.replace(np.nan, '-')
     output.to_csv('{0}/DASH.output.txt'.format(output_dir), index=False, sep='\t')
 
+    # plotting
+    print("Plotting.")
+    for gene in ["A", "B", "C"]:
+        PATH_df = os.path.join(output_dir, "DASH." + "mismatches_" + gene + ".txt")
+        PATH_all_positions_df = os.path.join(output_dir, "DASH." + "all_positions_" + gene + ".txt")
+        if os.path.exists(PATH_df) and os.path.exists(PATH_all_positions_df):
+            df = pd.read_csv(PATH_df, sep='\t')
+            all_positions_df = pd.read_csv(PATH_all_positions_df, sep='\t')
+            allele1 = allele_dict[gene][0]
+            allele2 = allele_dict[gene][1]
+            plot_results(df, all_positions_df, gene, "sample_name", allele1, allele2)
+        else:
+            print("For HLA-", gene, "at least one of the required outputs does not exist. Abort plotting.")
     print('Done.')
-
