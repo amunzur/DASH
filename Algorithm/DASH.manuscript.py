@@ -389,7 +389,7 @@ if __name__ == "__main__":
     # File based inputs
     args.add_argument("--purity", action="store", required=True, help="Tumor purity of sample.")
     args.add_argument("--ploidy", action="store", required=True, help="Tumor ploidy of sample.")
-    args.add_argument("--hla_types", action="store", required=True, help="Original common separated list.")
+    args.add_argument("--path_polysolver_winners", action="store", required=True, help="The path to the winner HLA alleles outputted by Polysolver.")
     args.add_argument("--normal_fastq", action="store", required=True, help="Fastqs with normal HLA reads.")
     args.add_argument("--tumor_fastq", action="store", required=True, help="Fastqs with tumor HLA reads.")
     args.add_argument("--hla_somatic_mutations", action="store", required=True,
@@ -436,7 +436,7 @@ if __name__ == "__main__":
     print("Flanking calls imported.")
 
     # Get HLA types
-    alleles, allele_dict = get_HLA_types(options.hla_types, options.all_allele_reference)
+    alleles, allele_dict = get_HLA_types(options.path_polysolver_winners, options.all_allele_reference)
     print("HLA types extracted and formatted.")
 
     # Get the somatically mutated HLA alleles from Polysolver
