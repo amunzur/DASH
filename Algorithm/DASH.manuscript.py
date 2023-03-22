@@ -20,9 +20,14 @@ import seaborn as sns
 chrom = 'chr6'
 contig = '6'
 boundary = 10000
-A_start, A_end = 29910247, 29913661
-B_start, B_end = 31321649, 31324989 
-C_start, C_end = 31236526, 31239913
+# hg19 coordinates
+# A_start, A_end = 29910247, 29913661
+# B_start, B_end = 31321649, 31324989 
+# C_start, C_end = 31236526, 31239913
+# hg38 coordinates
+A_start,A_end = 29941878, 29946512
+B_start,B_end = 31353204, 31357838
+C_start,C_end = 31268097, 31272731
 
 min_normal_depth = 15
 percentage_mapped = 0.8
@@ -32,7 +37,6 @@ bin_size = 150
 cutoff = 0.5
 BAF_cutoff = 0.02
 R_cutoff = 0.98
-
 
 # Get and process the HLA types
 def get_HLA_types(path_polysolver_winners, hla_database):
@@ -55,7 +59,7 @@ def get_HLA_types(path_polysolver_winners, hla_database):
         if hla not in all_alleles:
             hla = get_adjacent_alleles_in_polysolver_dataset(hla, all_alleles)
             if hla not in all_alleles:
-                print("[Error] HLA type is not in database. Check format or allele: {0}".format(hla_formatted))
+                print("[Error] HLA type is not in database. Check format or allele: {0}".format(hla_types))
                 sys.exit()
 
     # Make into dictionaries
@@ -326,7 +330,7 @@ def get_percent_coverage(median_cn_per_bin_1, median_cn_per_bin_2):
     return percCov
 
 
-# Calculat percentage coverage
+# Calculate percentage coverage
 def get_lower_value(x, y):
     if math.isnan(x):
         return 0.5
@@ -381,6 +385,72 @@ def plot_results(df, all_positions_df, gene, sample_name, allele1, allele2):
 
     plt.savefig('{0}/coverage_{1}.pdf'.format(output_dir, gene))
 
+# The following is for checking if there is an LOH event in the regions flanking the HLA alleles using the segments.txt file from Sequenza.
+def get_sequenza_flanking(sequenza_cnv):
+    sequenza_majors, sequenza_minors = [], []
+    sequenza = get_sequenza_all(sequenza_cnv)
+    for gene in ['A_loss', 'B_loss', 'C_loss']:
+        if len(sequenza[sequenza[gene]]) > 0:
+            sequenza_majors.extend([list(sequenza[sequenza[gene]].A)[0], list(sequenza[sequenza[gene]].A)[0]])
+            sequenza_minors.extend([list(sequenza[sequenza[gene]].B)[0], list(sequenza[sequenza[gene]].B)[0]])
+        else:
+            sequenza_majors.extend([1, 1])
+            sequenza_minors.extend([1, 1])
+    # Based on the copy number status, determine if there could be a LOH event. The sum of minor and major will be less than 4 if there is a possible LOH event.
+    flanking_loh = []
+    result = [a + b for a, b in zip(sequenza_majors, sequenza_minors)]
+    for i in range(0, len(result), 2):
+        group = result[i:i+2]
+        if (sum(group) < 8): 
+            flanking_loh.extend(["1"])
+        else: 
+            flanking_loh.extend(["0"])
+    return(",".join(flanking_loh))
+
+# Getting more information out of Sequenza
+def get_sequenza_all(sequenza_cnv):
+    sequenza = pd.read_csv(sequenza_cnv, sep='\t')
+    sequenza = sequenza[sequenza.chromosome.apply(str) == chrom]
+ 
+    sequenza['A_loss'] = sequenza[['start.pos', 'end.pos']].apply(loh_around_hla_a, axis=1)
+    sequenza['B_loss'] = sequenza[['start.pos', 'end.pos']].apply(loh_around_hla_b, axis=1)
+    sequenza['C_loss'] = sequenza[['start.pos', 'end.pos']].apply(loh_around_hla_c, axis=1)
+ 
+    return sequenza[((sequenza.A_loss)|(sequenza.B_loss)|(sequenza.C_loss))] 
+  
+# Helper functions
+def find_loss(gene_start, gene_end, x):
+    start = x[0]
+    end = x[1]
+    loss = False
+ 
+    # Within the gene region
+    if start < gene_end and end > gene_start:
+        loss = True
+ 
+    # Before the gene region 
+    if start < gene_start and end > gene_start - boundary:
+        loss = True
+ 
+    # After the gene region 
+    if start < gene_end + boundary and end > gene_end:
+        loss = True
+    return loss
+ 
+ 
+def loh_around_hla_a(x):
+    gene_start, gene_end = A_start, A_end
+    return find_loss(gene_start, gene_end, x)
+ 
+ 
+def loh_around_hla_b(x):
+    gene_start, gene_end = B_start, B_end
+    return find_loss(gene_start, gene_end, x)
+ 
+ 
+def loh_around_hla_c(x):
+    gene_start, gene_end = C_start, C_end
+    return find_loss(gene_start, gene_end, x)
 
 if __name__ == "__main__":
     print("Entering Deletion of Allele Specific HLA (DASH) script")
@@ -398,8 +468,8 @@ if __name__ == "__main__":
                       help="Number of mapped reads in normal sequencing run.")
     args.add_argument("--tumor_read_count", action="store", required=True,
                       help="Number of mapped reads in tumor sequencing run.")
-    args.add_argument("--b_allele_flanking_loh", action="store", required=True,
-                      help="B-allele copy number of flanking region (within 10,000 bp).")
+    args.add_argument("--sequenza_cnv", action="store", required=True,
+                      help="The path to the segments.txt file from Sequenza.")
     args.add_argument("--all_allele_reference", action="store", required=True, help="IMGT allele reference file.")
     args.add_argument("--model_filename", action="store", required=True, help="XGBoost model (pickle).")
     args.add_argument("--output_dir", action="store", required=True, help='directory for output information')
@@ -432,8 +502,9 @@ if __name__ == "__main__":
     print("Model imported.")
 
     # Get flanking regions and convert to integers
-    flanking_calls = [int(x) for x in options.b_allele_flanking_loh.split(',')]
-    print("Flanking calls imported.")
+    flanking_calls = get_sequenza_flanking(options.sequenza_cnv)
+    flanking_calls = [int(x) for x in flanking_calls.split(',')]
+    print("Flanking calls computed.")
 
     # Get HLA types
     alleles, allele_dict = get_HLA_types(options.path_polysolver_winners, options.all_allele_reference)
