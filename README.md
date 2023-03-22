@@ -11,3 +11,5 @@ you no longer need to add `samtools` or `bwa` to the path. It only needs to exis
 trained model. Correct order is ensured with the use of `reindex` from `pandas`.
 5. Some minor changes throughout the script so that the ploidy estimates are correctly converted to an integer.
 We first need to convert it to float, and then to an integer.
+6. Instead of supplying the `b_allele_flanking_loh`, now the user just needs to give the path to the `segments.txt` file from Sequenza. The whether there is a LOH event or not is computed in the script. 1 means there is a deletion, 0 means not.
+7. It is no longer needed to give the Polysolver output in a string format separated by `*` and `:`. Instead of `hla_types`, the user can give the path to the `winners_hla.txt` file from HLA-Polysolver. The alleles are formatted in the script.
