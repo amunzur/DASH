@@ -461,8 +461,8 @@ def get_ploidy(dir_sequenza):
         for file in os.listdir(dir_sequenza):
             if file.endswith('alternative_solutions.txt'):
                 sln = pd.read_csv(os.path.join(dir_sequenza, file), sep='\t')
-                ploidy = str(sln["ploidy"][0])
-                purity = str(sln["cellularity"][0])
+                ploidy = str(sln.iloc[0]["ploidy"])
+                purity = str(sln.iloc[0]["cellularity"])
                 return([ploidy, purity])
 
 if __name__ == "__main__":
