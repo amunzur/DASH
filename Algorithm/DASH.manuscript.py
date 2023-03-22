@@ -35,10 +35,14 @@ R_cutoff = 0.98
 
 
 # Get and process the HLA types
-def get_HLA_types(raw_hla_path, hla_database):
-    # Open file with HLA types
-    with open(raw_hla_path) as file:
-        hla_types = [line.rstrip() for line in file]
+def get_HLA_types(path_polysolver_winners, hla_database):
+    # Open the polysolver output and format
+    with open(path_polysolver_winners, 'r') as input_file:
+        lines = input_file.readlines()
+
+    hla_types = []
+    for line in lines:
+        hla_types.extend(line.split()[1:]) # Split each line by whitespace and append the HLA types to the list
 
     # Get polysolver alleles
     all_alleles = []
