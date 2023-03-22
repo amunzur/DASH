@@ -452,13 +452,25 @@ def loh_around_hla_c(x):
     gene_start, gene_end = C_start, C_end
     return find_loss(gene_start, gene_end, x)
 
+# Using the alternative_solutions.txt file get the sample ploidy. The first reported solution is used.
+def get_ploidy(dir_sequenza): 
+    # if there are no files that end with "alternative_solutions.txt":
+    if not any(file.endswith(".txt") for file in os.listdir(dir_sequenza)):
+        print("Are you sure you ran Sequenza? alternative_solutions.txt file can't be found.")
+    else: 
+        for file in os.listdir(dir_sequenza):
+            if file.endswith('alternative_solutions.txt'):
+                sln = pd.read_csv(os.path.join(dir_sequenza, file), sep='\t')
+                ploidy = str(sln["ploidy"][0])
+                purity = str(sln["cellularity"][0])
+                return([ploidy, purity])
+
 if __name__ == "__main__":
     print("Entering Deletion of Allele Specific HLA (DASH) script")
 
     args = argparse.ArgumentParser()
     # File based inputs
-    args.add_argument("--purity", action="store", required=True, help="Tumor purity of sample.")
-    args.add_argument("--ploidy", action="store", required=True, help="Tumor ploidy of sample.")
+    args.add_argument("--dir_sequenza", action="store", required=True, help="The directory where Sequenza outputs are found.")
     args.add_argument("--path_polysolver_winners", action="store", required=True, help="The path to the winner HLA alleles outputted by Polysolver.")
     args.add_argument("--normal_fastq", action="store", required=True, help="Fastqs with normal HLA reads.")
     args.add_argument("--tumor_fastq", action="store", required=True, help="Fastqs with tumor HLA reads.")
@@ -501,6 +513,9 @@ if __name__ == "__main__":
     model = pickle.load(open(options.model_filename, "rb"))
     print("Model imported.")
 
+    # Get ploidy and purity estimates from Sequenza
+    [ploidy, purity] = get_ploidy(options.dir_sequenza)
+
     # Get flanking regions and convert to integers
     flanking_calls = get_sequenza_flanking(options.sequenza_cnv)
     flanking_calls = [int(x) for x in flanking_calls.split(',')]
@@ -537,7 +552,7 @@ if __name__ == "__main__":
 
         # Check for homozygous alleles
         if allele1 == allele2:  # Homozygous genes
-            dash_output_dict = address_homozygosity(dash_output_dict, float(options.purity), int(float(options.ploidy)))
+            dash_output_dict = address_homozygosity(dash_output_dict, float(purity), int(float(ploidy)))
             continue
 
         # Alignment
@@ -561,13 +576,13 @@ if __name__ == "__main__":
         print('Number of mismatches: {0}'.format(len(mismatches_df)))
         if len(mismatches_df) < 5:
             print('WARNING: Dangerously low number of mismatches with coverage')
-            dash_output_dict = address_homozygosity(dash_output_dict, float(options.purity), int(float(options.ploidy)))
+            dash_output_dict = address_homozygosity(dash_output_dict, float(purity), int(float(ploidy)))
             continue
 
         # Adding non-alignment dependent features
         dash_output_dict['Flanking_region_LOH'].extend([flanking_calls[gene_index], flanking_calls[gene_index]])
-        dash_output_dict['Purities'].extend([float(options.purity), float(options.purity)])
-        dash_output_dict['Ploidies'].extend([int(float(options.ploidy)), int(float(options.ploidy))])
+        dash_output_dict['Purities'].extend([float(purity), float(purity)])
+        dash_output_dict['Ploidies'].extend([int(float(ploidy)), int(float(ploidy))])
         dash_output_dict['Alleles'].extend([allele1, allele2])
 
         # Calculate the b-allele frequency for each mismatch
@@ -611,7 +626,7 @@ if __name__ == "__main__":
         dash_output_dict['Total_Coverage'].extend([total_coverage, total_coverage])
 
         # Machine learning prediction
-        prediction_df = pd.DataFrame({'purity': [float(options.purity)], 'ploidy': [int(float(options.ploidy))],
+        prediction_df = pd.DataFrame({'purity': [float(purity)], 'ploidy': [int(float(ploidy))],
                                       'Sequenza_Loss': [flanking_calls[gene_index]],
                                       'minMedCoverage': [min_allele_specific_coverage], 'baf_median': [adj_baf],
                                       'percCov': [percCov], 'totalCoverage_median': [total_coverage]})
@@ -620,7 +635,7 @@ if __name__ == "__main__":
 
         # prediction_df = pd.DataFrame({'Sequenza_Loss': [flanking_calls[gene_index]], 'baf_median': [adj_baf], 
         #                               'minMedCoverage': [min_allele_specific_coverage], 'percCov': [percCov], 
-        #                               'ploidy': [int(float(options.ploidy))], 'purity': [float(options.purity)], 
+        #                               'ploidy': [int(float(ploidy))], 'purity': [float(options.purity)], 
         #                               'totalCoverage_median': [total_coverage]})
 
         prediction_df.to_csv('{0}/DASH.features_{1}.csv'.format(output_dir, gene), index=False)
