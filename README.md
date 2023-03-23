@@ -30,7 +30,7 @@ The new parameters needed are:
 ### Here is an example: 
 ```
 python DASH.manuscript.py \
-	--dir_sequenza /some/path/sample_alternative_solutions.txt \
+	--dir_sequenza /some/path \
 	--hla_types /some/path.hla_winners.txt \
 	--normal_fastq ./test_data/HLA_reads.normal.fasta \
 	--tumor_fastq ./test_data/HLA_reads.tumor.fasta \
