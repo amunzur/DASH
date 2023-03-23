@@ -523,7 +523,7 @@ if __name__ == "__main__":
     [ploidy, purity] = get_ploidy(options.dir_sequenza)
 
     # Get flanking regions and convert to integers
-    flanking_calls = get_sequenza_flanking(options.sequenza_dir)
+    flanking_calls = get_sequenza_flanking(options.dir_sequenza)
     flanking_calls = [int(x) for x in flanking_calls.split(',')]
     print("Flanking calls computed.")
 
