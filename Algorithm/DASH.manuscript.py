@@ -15,6 +15,7 @@ import sys
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 
 # Constants
 chrom = 'chr6'
@@ -98,18 +99,40 @@ def get_adjacent_alleles_in_polysolver_dataset(allele, polysolver_alleles):
         print("No allele with the same super type available.")
         return '-'
 
+# mini helper function
+def skip_rows(row):
+    if row.startswith("##"):
+        return ""
+    else:
+        return None
 
 # Get information for mutations in the HLA genes
 def get_mutated_alleles(hla_somatic_mutations):
     if os.path.isfile(hla_somatic_mutations):
-        tmp = pd.read_csv(hla_somatic_mutations, skiprows=73,
-                      header=0, sep='\t')
-        mutated_alleles = list(tmp['#CHROM'])
+        df = pd.read_csv(hla_somatic_mutations, delimiter='\t', skiprows=lambda x: skip_rows(x))
+        mutated_alleles = list(df['#CHROM'])        
         return mutated_alleles
     else:
         print('Looked for somatic mutations, but no Polysolver file was found.')
         return []
 
+
+
+def get_mutated_alleles(hla_somatic_mutations):
+    # Open the file and read the lines
+    data = [] # empty list to append non comment lines 
+    if os.path.isfile(hla_somatic_mutations):
+        with open(hla_somatic_mutations, "r") as file:
+            for line in file:
+                if not line.startswith("##"):
+                    fields = line.strip().split("\t")
+                    data.append(fields)
+                    df = pd.DataFrame(data[1:], columns=data[0])
+                    mutations = list(df["#CHROM"])
+                    return mutations
+    else:
+        print('Looked for somatic mutations, but no Polysolver file was found.')
+        return []
 
 # Run alignment of reads on patient-specific HLA alleles
 def run_alignment_on_all_alleles(alleles, normal_dev, tumor_dev, normal_fastq, tumor_fastq):
