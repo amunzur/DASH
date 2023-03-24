@@ -99,25 +99,6 @@ def get_adjacent_alleles_in_polysolver_dataset(allele, polysolver_alleles):
         print("No allele with the same super type available.")
         return '-'
 
-# mini helper function
-def skip_rows(row):
-    if row.startswith("##"):
-        return ""
-    else:
-        return None
-
-# Get information for mutations in the HLA genes
-def get_mutated_alleles(hla_somatic_mutations):
-    if os.path.isfile(hla_somatic_mutations):
-        df = pd.read_csv(hla_somatic_mutations, delimiter='\t', skiprows=lambda x: skip_rows(x))
-        mutated_alleles = list(df['#CHROM'])        
-        return mutated_alleles
-    else:
-        print('Looked for somatic mutations, but no Polysolver file was found.')
-        return []
-
-
-
 def get_mutated_alleles(hla_somatic_mutations):
     # Open the file and read the lines
     data = [] # empty list to append non comment lines 
@@ -496,6 +477,16 @@ def get_ploidy(dir_sequenza):
                 purity = str(sln.iloc[0]["cellularity"])
                 return([ploidy, purity])
 
+def get_read_counts(read_counts_path): 
+    if os.path.isfile(read_counts_path): 
+        with open('filename.txt') as file:
+            counts = file.readlines()
+            return(counts[0])
+    else: 
+        print("Read counts haven't been computed.")
+        sys.exit()
+
+
 if __name__ == "__main__":
     print("Entering Deletion of Allele Specific HLA (DASH) script")
 
@@ -507,10 +498,10 @@ if __name__ == "__main__":
     args.add_argument("--tumor_fastq", action="store", required=True, help="Fastqs with tumor HLA reads.")
     args.add_argument("--hla_somatic_mutations", action="store", required=True,
                       help="Polysolver HLA somatic calls output file.")
-    args.add_argument("--normal_read_count", action="store", required=True,
-                      help="Number of mapped reads in normal sequencing run.")
-    args.add_argument("--tumor_read_count", action="store", required=True,
-                      help="Number of mapped reads in tumor sequencing run.")
+    args.add_argument("--path_normal_read_count", action="store", required=True,
+                      help="The path to a text file that has a single value, which is the read counts.")
+    args.add_argument("--path_tumor_read_count", action="store", required=True,
+                      help="The path to a text file that has a single value, which is the read counts.")
     args.add_argument("--all_allele_reference", action="store", required=True, help="IMGT allele reference file.")
     args.add_argument("--model_filename", action="store", required=True, help="XGBoost model (pickle).")
     args.add_argument("--output_dir", action="store", required=True, help='directory for output information')
@@ -544,6 +535,10 @@ if __name__ == "__main__":
 
     # Get ploidy and purity estimates from Sequenza
     [ploidy, purity] = get_ploidy(options.dir_sequenza)
+
+    # Get the normal and tumor read counts
+    normal_read_count = get_read_counts(options.path_normal_read_count)
+    tumor_read_count = get_read_counts(options.path_tumor_read_count)
 
     # Get flanking regions and convert to integers
     flanking_calls = get_sequenza_flanking(options.dir_sequenza)
@@ -588,8 +583,9 @@ if __name__ == "__main__":
         alignments = get_alignment_of_homologous_alleles(allele1, allele2, options.all_allele_reference)
 
         # Get tumor-normal normalization factor
-        normalization_factor = float(options.normal_read_count) / float(options.tumor_read_count)
-        print('Normalization factor:', normalization_factor)
+        normalization_factor = float(normal_read_count) / float(tumor_read_count)
+        print('Normalization factor:', 
+              )
 
         # Get coverage values for all positions and for mismatch positions
         all_positions_df = calculate_logr(gene, allele1, allele2, bin_size, normalization_factor)
