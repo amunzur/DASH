@@ -21,8 +21,8 @@ The new parameters needed are:
 `--normal_fastq:` Fastq with reads from normal sample  
 `--tumor_fastq:` Fastq with reads from tumor sample  
 `--hla_somatic_mutations:` HLA somatic mutations (polysolver file)  
-`--normal_read_count:` Number of reads from normal sample  
-`--tumor_read_count:` Number of reads from tumor sample  
+`--path_normal_read_count:` The path to the text file that has the number of reads from normal sample  
+`--path_tumor_read_count:` The path to the number of reads from the tumor sample  
 `--all_allele_reference:` Reference database of genomic sequences for all alleles  
 `--model_filename:` Model file name (This file needs to be requested from authors. Please send an email to bioinformatics.science@personalis.com.)  
 `--output_dir:` Output directory  
@@ -35,8 +35,8 @@ python DASH.manuscript.py \
 	--normal_fastq ./test_data/HLA_reads.normal.fasta \
 	--tumor_fastq ./test_data/HLA_reads.tumor.fasta \
 	--hla_somatic_mutations ./test_data/hla_mutations.merged.vcf \
-	--normal_read_count 166545259.1184 \
-	--tumor_read_count 333050764.298 \
+	--path_normal_read_count /some/path \
+	--path_tumor_read_count /some/path \
 	--all_allele_reference ./test_data/hla_gen.fasta.IMGTv312.txt \
 	--model_filename some/path/model.p \
 	--output_dir ./test_output
