@@ -100,17 +100,22 @@ def get_adjacent_alleles_in_polysolver_dataset(allele, polysolver_alleles):
         return '-'
 
 def get_mutated_alleles(hla_somatic_mutations):
-    # Open the file and read the lines
-    data = [] # empty list to append non comment lines 
-    if os.path.isfile(hla_somatic_mutations):
-        with open(hla_somatic_mutations, "r") as file:
-            for line in file:
-                if not line.startswith("##"):
-                    fields = line.strip().split("\t")
-                    data.append(fields)
-                    df = pd.DataFrame(data[1:], columns=data[0])
-                    mutations = list(df["#CHROM"])
-                    return mutations
+    '''
+    Given a directory containig mutations called by Polysolver, this function reads these files and returns the number of mutations called.
+    $indiv.mutect.filtered.nonsyn.annotated -  list of cleaned non-synonymous mutations
+    $indiv.mutect.filtered.syn.annotated - list of cleaned synonymous changes
+    $indiv.strelka_indels.filtered.annotated
+    '''
+    # Get a list of all files in the directory
+    if os.path.isdir(hla_somatic_mutations):
+        files = os.listdir(hla_somatic_mutations)
+        search_string = "mutect.filtered.nonsyn.annotated|mutect.filtered.syn.annotated|strelka_indels.filtered.annotated"
+        filtered_files = [file for file in files if re.search(search_string, file)]
+        mutation_count = 0
+        for filename in filtered_files:
+            f = pd.read_csv(os.path.join(hla_somatic_mutations, filename), "\t")
+            mutation_count += f.shape[0] # up the count by 1 for every mutation identified
+        return mutation_count
     else:
         print('Looked for somatic mutations, but no Polysolver file was found.')
         return []
@@ -159,7 +164,7 @@ def clean_up_reads(normal_dev, tumor_dev, alleles, mutated_alleles):
 
     # Allow greater stringency across all alleles if there is a somatic mutation in at least one allele
     stringency = 0
-    if len(mutated_alleles) > 0:
+    if mutated_alleles > 0:
         stringency += 1
 
     read_name_dict = {}
@@ -479,7 +484,7 @@ def get_ploidy(dir_sequenza):
 
 def get_read_counts(read_counts_path): 
     if os.path.isfile(read_counts_path): 
-        with open('filename.txt') as file:
+        with open(read_counts_path) as file:
             counts = file.readlines()
             return(counts[0])
     else: 
@@ -498,13 +503,14 @@ if __name__ == "__main__":
     args.add_argument("--tumor_fastq", action="store", required=True, help="Fastqs with tumor HLA reads.")
     args.add_argument("--hla_somatic_mutations", action="store", required=True,
                       help="Polysolver HLA somatic calls output file.")
-    args.add_argument("--path_normal_read_count", action="store", required=True,
-                      help="The path to a text file that has a single value, which is the read counts.")
-    args.add_argument("--path_tumor_read_count", action="store", required=True,
-                      help="The path to a text file that has a single value, which is the read counts.")
+    args.add_argument("--normal_read_count", action="store", required=True,
+                      help="Number of reads in the normal.")
+    args.add_argument("--tumor_read_count", action="store", required=True,
+                      help="Number of reads in the tumor.")
     args.add_argument("--all_allele_reference", action="store", required=True, help="IMGT allele reference file.")
     args.add_argument("--model_filename", action="store", required=True, help="XGBoost model (pickle).")
     args.add_argument("--output_dir", action="store", required=True, help='directory for output information')
+
 
     options = args.parse_args()
     print("Arguments parsed.")
@@ -537,8 +543,8 @@ if __name__ == "__main__":
     [ploidy, purity] = get_ploidy(options.dir_sequenza)
 
     # Get the normal and tumor read counts
-    normal_read_count = get_read_counts(options.path_normal_read_count)
-    tumor_read_count = get_read_counts(options.path_tumor_read_count)
+    normal_read_count = options.normal_read_count
+    tumor_read_count = options.tumor_read_count
 
     # Get flanking regions and convert to integers
     flanking_calls = get_sequenza_flanking(options.dir_sequenza)
