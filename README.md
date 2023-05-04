@@ -20,7 +20,7 @@ The new parameters needed are:
 `--path_polysolver_winners:` The path to the `winners_hla.txt` file from HLA-Polysolver  
 `--normal_fastq:` Fastq with reads from normal sample  
 `--tumor_fastq:` Fastq with reads from tumor sample  
-`--hla_somatic_mutations:` HLA somatic mutations (polysolver file)  
+`--hla_somatic_mutations:` The directory that contains the HLA somatic mutations called by Polysolver.
 `--path_normal_read_count:` The path to the text file that has the number of reads from normal sample  
 `--path_tumor_read_count:` The path to the number of reads from the tumor sample  
 `--all_allele_reference:` Reference database of genomic sequences for all alleles  
@@ -34,7 +34,7 @@ python DASH.manuscript.py \
 	--hla_types /some/path.hla_winners.txt \
 	--normal_fastq ./test_data/HLA_reads.normal.fasta \
 	--tumor_fastq ./test_data/HLA_reads.tumor.fasta \
-	--hla_somatic_mutations ./test_data/hla_mutations.merged.vcf \
+	--hla_somatic_mutations ./test_data/hla_mutations_directory \
 	--path_normal_read_count /some/path \
 	--path_tumor_read_count /some/path \
 	--all_allele_reference ./test_data/hla_gen.fasta.IMGTv312.txt \
