@@ -44,56 +44,57 @@ def get_HLA_types(path_polysolver_winners, hla_database):
     # Open the polysolver output and format
     with open(path_polysolver_winners, 'r') as input_file:
         lines = input_file.readlines()
-
+    
     hla_types = []
     for line in lines:
         hla_types.extend(line.split()[1:]) # Split each line by whitespace and append the HLA types to the list
-
+    
     # Get polysolver alleles
     all_alleles = []
     with open(hla_database, "r") as handle:
         for record in SeqIO.parse(handle, "fasta"):
             all_alleles.append(record.description)
-
+    
     # Check for existence of HLA types
+    hla_types_formatted = []
     for hla in hla_types:
         if hla not in all_alleles:
-            hla = get_adjacent_alleles_in_polysolver_dataset(hla, all_alleles)
-            if hla not in all_alleles:
-                print("[Error] HLA type is not in database. Check format or allele: {0}".format(hla_types))
+            hla_formatted = get_adjacent_alleles_in_polysolver_dataset(hla, all_alleles)
+            hla_types_formatted.append(hla_formatted)
+            if hla_formatted not in all_alleles:
+                print("[Error] HLA type is not in database. Check format or allele: {0}".format(hla_formatted))
                 sys.exit()
-
+    
     # Make into dictionaries
-    allele_dict = {'A': hla_types[:2],
-                      'B': hla_types[2:4],
-                      'C': hla_types[4:]}
-
-    return hla_types, allele_dict
-
+    allele_dict = {'A': hla_types_formatted[:2],
+                      'B': hla_types_formatted[2:4],
+                      'C': hla_types_formatted[4:]}
+    
+    return hla_types_formatted, allele_dict
 
 # Convert alleles that don't exist in polysolver
 def get_adjacent_alleles_in_polysolver_dataset(allele, polysolver_alleles):
-
+    
     # Check if a digit needs to be removed
     if len([x for x in polysolver_alleles if '_'.join(allele.split('_')[:-1]) == x]) > 0:
         return [x for x in polysolver_alleles if '_'.join(allele.split('_')[:-1]) == x][0]
-
+    
     # Check if a digit needs to be added (default to taking the first option)
     elif len([x for x in polysolver_alleles if '_'.join(x.split('_')[:-1]) == allele]) > 0:
         return [x for x in polysolver_alleles if '_'.join(x.split('_')[:-1]) == allele][0]
-
+    
     # Check if two digits need to be removed
     elif len([x for x in polysolver_alleles if '_'.join(allele.split('_')[:-2]) == x]) > 0:
         return [x for x in polysolver_alleles if '_'.join(allele.split('_')[:-2]) == x][0]
-
+    
     # Check if three digits need to be removed
     elif len([x for x in polysolver_alleles if '_'.join(allele.split('_')[:-3]) == x]) > 0:
         return [x for x in polysolver_alleles if '_'.join(allele.split('_')[:-3]) == x][0]
-
+    
     # Check if there is a matching super type
     elif len([x for x in polysolver_alleles if '_'.join(allele.split('_')[:3]) in x]) > 0:
         return [x for x in polysolver_alleles if '_'.join(allele.split('_')[:3]) in x][0]
-
+    
     # No call because there is no allele with the same super type
     else:
         print("No allele with the same super type available.")
@@ -118,7 +119,7 @@ def get_mutated_alleles(hla_somatic_mutations):
         return mutation_count
     else:
         print('Looked for somatic mutations, but no Polysolver file was found.')
-        return []
+        return 0
 
 # Run alignment of reads on patient-specific HLA alleles
 def run_alignment_on_all_alleles(alleles, normal_dev, tumor_dev, normal_fastq, tumor_fastq):
@@ -497,7 +498,9 @@ if __name__ == "__main__":
 
     args = argparse.ArgumentParser()
     # File based inputs
-    args.add_argument("--dir_sequenza", action="store", required=True, help="The directory where Sequenza outputs are found.")
+    # args.add_argument("--dir_sequenza", action="store", required=True, help="The directory where Sequenza outputs are found.")
+    args.add_argument("--ploidy", action="store", required=True, help="")
+    args.add_argument("--purity", action="store", required=True, help="")
     args.add_argument("--path_polysolver_winners", action="store", required=True, help="The path to the winner HLA alleles outputted by Polysolver.")
     args.add_argument("--normal_fastq", action="store", required=True, help="Fastqs with normal HLA reads.")
     args.add_argument("--tumor_fastq", action="store", required=True, help="Fastqs with tumor HLA reads.")
@@ -540,15 +543,18 @@ if __name__ == "__main__":
     print("Model imported.")
 
     # Get ploidy and purity estimates from Sequenza
-    [ploidy, purity] = get_ploidy(options.dir_sequenza)
+    # [ploidy, purity] = get_ploidy(options.dir_sequenza)
+    ploidy=options.ploidy
+    purity=options.purity
 
     # Get the normal and tumor read counts
     normal_read_count = options.normal_read_count
     tumor_read_count = options.tumor_read_count
 
     # Get flanking regions and convert to integers
-    flanking_calls = get_sequenza_flanking(options.dir_sequenza)
-    flanking_calls = [int(x) for x in flanking_calls.split(',')]
+    # flanking_calls = get_sequenza_flanking(options.dir_sequenza)
+    # flanking_calls = [int(x) for x in flanking_calls.split(',')]
+    flanking_calls=[1, 1, 1]
     print("Flanking calls computed.")
 
     # Get HLA types
